@@ -1,0 +1,133 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=url_shortener_dev
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - url_shortener
+    healthcheck:
+      test: pg_isready -U postgres
+      timeout: 10s
+      start_period: 10s
+      start_interval: 1s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "256MB"
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    networks:
+      - url_shortener
+    healthcheck:
+      test: redis-cli ping
+      timeout: 10s
+      start_period: 5s
+      start_interval: 1s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: "64MB"
+
+  web01:
+    hostname: web01
+    build:  .
+    networks:
+      - url_shortener
+    environment:
+      - DATABASE_URL=ecto://postgres:postgres@postgres/url_shortener_dev
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition:  service_healthy
+    healthcheck:
+      test: curl -f http://web01:4000/
+      timeout: 15s
+      start_period: 30s
+      start_interval:  1s
+      retries:  3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "128MB"
+
+  # web02:
+  #   <<: *web
+  #   hostname: web02
+  #   environment: 
+  #     - DATABASE_URL=ecto://postgres:postgres@localhost/url_shortener_dev
+  #     - REDIS_URL=redis://redis:6379
+  #     - PORT=4000
+  #     - SECRET_KEY_BASE=your-secret-key-base-generate-with-mix-phx-gen-secret
+  #     - RELEASE_NODE=web02@web02
+  #     - RELEASE_COOKIE=url_shortener
+  #     - CLUSTER_NODE=web01@web01
+  #   healthcheck:
+  #     test: curl -f http://web02:4000/
+  #     timeout: 15s
+  #     start_period: 30s
+  #     start_interval:  1s
+  #     retries:  3
+
+  # web03:
+  #   <<: *web
+  #   hostname: web03
+  #   environment: 
+  #     - DATABASE_URL=ecto://postgres:postgres@localhost/url_shortener_dev
+  #     - REDIS_URL=redis://redis:6379
+  #     - PORT=4000
+  #     - SECRET_KEY_BASE=your-secret-key-base-generate-with-mix-phx-gen-secret
+  #     - RELEASE_NODE=web03@web03
+  #     - RELEASE_COOKIE=url_shortener
+  #     - CLUSTER_NODE=web01@web01
+  #   healthcheck:
+  #     test: curl -f http://web03:4000/
+  #     timeout: 15s
+  #     start_period:  30s
+  #     start_interval: 1s
+  #     retries: 3
+
+  nginx: 
+    image: nginx:1.27-alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      web01:
+        condition: service_healthy
+      # web02:
+      #   condition: service_healthy
+      # web03:
+      #   condition: service_healthy
+    ports:
+      - "8080:80"
+    networks: 
+      - url_shortener
+    deploy:
+      resources: 
+        limits:
+          cpus:  "0.1"
+          memory: "16MB"
+
+volumes:
+  postgres_data:
+  redis_data: 
+
+networks:
+  url_shortener:
+    name: url_shortener
+    driver: bridge
