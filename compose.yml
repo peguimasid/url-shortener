@@ -18,6 +18,44 @@ services:
     networks:
       - url-shortener
 
+  api02:
+    hostname: api02
+    build: .
+    environment:
+      - DATABASE_URL=ecto://postgres:postgres@postgres/url_shortener_dev
+      - SECRET_KEY_BASE=WxMbiamDW+larjkiC3tRgWhaNsgpUSYI9IwPnx1OLZIif474mkR2aPk8ALbtvFSL
+      - PHX_SERVER=true
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "128MB"
+    networks:
+      - url-shortener
+
+  api03:
+    hostname: api03
+    build: .
+    environment:
+      - DATABASE_URL=ecto://postgres:postgres@postgres/url_shortener_dev
+      - SECRET_KEY_BASE=WxMbiamDW+larjkiC3tRgWhaNsgpUSYI9IwPnx1OLZIif474mkR2aPk8ALbtvFSL
+      - PHX_SERVER=true
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "128MB"
+    networks:
+      - url-shortener
+
   nginx: 
     image: nginx:latest
     volumes:
