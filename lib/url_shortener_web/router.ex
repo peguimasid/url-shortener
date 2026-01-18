@@ -7,6 +7,8 @@ defmodule UrlShortenerWeb.Router do
 
   scope "/api", UrlShortenerWeb do
     pipe_through :api
+
+    get "/health-check", HealthCheckController, :index
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

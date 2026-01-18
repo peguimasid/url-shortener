@@ -55,7 +55,7 @@ services:
       redis:
         condition:  service_healthy
     healthcheck:
-      test: curl -f http://web01:4000/
+      test: curl -f http://web01:4000/api/health-check
       timeout: 15s
       start_period: 30s
       start_interval:  1s
