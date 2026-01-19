@@ -3,12 +3,12 @@ services:
     hostname: api01
     build: .
     environment:
-      - DATABASE_URL=ecto://postgres:postgres@postgres/url_shortener_dev
+      - DATABASE_URL=ecto://postgres:postgres@db/url_shortener_dev
       - SECRET_KEY_BASE=WxMbiamDW+larjkiC3tRgWhaNsgpUSYI9IwPnx1OLZIif474mkR2aPk8ALbtvFSL
       - PHX_SERVER=true
       - REDIS_URL=redis://redis:6379
     depends_on:
-      - postgres
+      - db
       - redis
     deploy:
       resources:
@@ -34,7 +34,7 @@ services:
     networks: 
       - url-shortener
 
-  postgres:
+  db:
     image: postgres:latest
     environment:
       - POSTGRES_USER=postgres
