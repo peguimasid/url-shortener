@@ -5,7 +5,7 @@ defmodule UrlShortener.Repo.Migrations.CreateUrls do
     create table(:urls) do
       add :url, :string
       add :short_code, :string
-      add :access_count, :integer
+      add :access_count, :integer, default: 0
 
       timestamps(type: :utc_datetime)
     end
