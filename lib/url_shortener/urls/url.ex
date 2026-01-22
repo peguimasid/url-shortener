@@ -13,8 +13,8 @@ defmodule UrlShortener.Urls.Url do
   @doc false
   def changeset(url, attrs) do
     url
-    |> cast(attrs, [:url, :short_code, :access_count])
-    |> validate_required([:url, :short_code, :access_count])
+    |> cast(attrs, [:url, :short_code])
+    |> validate_required([:url])
     |> unique_constraint(:short_code)
   end
 end

@@ -6,11 +6,11 @@ defmodule UrlShortenerWeb.UrlController do
 
   action_fallback UrlShortenerWeb.FallbackController
 
-  def create(conn, %{"url" => url_params}) do
-    with {:ok, %Url{} = url} <- Urls.create_url(url_params) do
+  def create(conn, %{"url" => url}) when is_binary(url) do
+    with {:ok, %Url{} = url_record} <- Urls.create_url(%{url: url}) do
       conn
       |> put_status(:created)
-      |> render(:show, url: url)
+      |> render(:show, url: url_record)
     end
   end
 

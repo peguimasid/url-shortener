@@ -7,6 +7,7 @@ defmodule UrlShortener.Urls do
   alias UrlShortener.Repo
 
   alias UrlShortener.Urls.Url
+  alias UrlShortener.Base62
 
   @doc """
   Returns the list of urls.
@@ -50,9 +51,12 @@ defmodule UrlShortener.Urls do
 
   """
   def create_url(attrs) do
-    %Url{}
-    |> Url.changeset(attrs)
-    |> Repo.insert()
+    changeset = Url.changeset(%Url{}, attrs)
+
+    with {:ok, url} <- Repo.insert(changeset) do
+      short_code = Base62.encode(url.id)
+      update_url(url, %{short_code: short_code})
+    end
   end
 
   @doc """
