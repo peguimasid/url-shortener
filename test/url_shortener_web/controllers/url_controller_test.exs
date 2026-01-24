@@ -2,91 +2,59 @@ defmodule UrlShortenerWeb.UrlControllerTest do
   use UrlShortenerWeb.ConnCase
 
   import UrlShortener.UrlsFixtures
-  alias UrlShortener.Urls.Url
-
-  @create_attrs %{
-    url: "some url",
-    short_code: "some short_code",
-    access_count: 42
-  }
-  @update_attrs %{
-    url: "some updated url",
-    short_code: "some updated short_code",
-    access_count: 43
-  }
-  @invalid_attrs %{url: nil, short_code: nil, access_count: nil}
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
-  describe "index" do
-    test "lists all urls", %{conn: conn} do
-      conn = get(conn, ~p"/api/urls")
-      assert json_response(conn, 200)["data"] == []
-    end
-  end
-
   describe "create url" do
     test "renders url when data is valid", %{conn: conn} do
-      conn = post(conn, ~p"/api/urls", url: @create_attrs)
-      assert %{"id" => id} = json_response(conn, 201)["data"]
-
-      conn = get(conn, ~p"/api/urls/#{id}")
+      conn = post(conn, ~p"/api/shorten", url: "https://example.com/some-page")
 
       assert %{
-               "id" => ^id,
-               "access_count" => 42,
-               "short_code" => "some short_code",
-               "url" => "some url"
-             } = json_response(conn, 200)["data"]
+               "id" => id,
+               "url" => "https://example.com/some-page",
+               "short_code" => short_code,
+               "access_count" => 0
+             } = json_response(conn, 201)["data"]
+
+      assert is_integer(id)
+      assert is_binary(short_code)
+      assert String.length(short_code) > 0
     end
 
-    test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, ~p"/api/urls", url: @invalid_attrs)
+    test "renders errors when url is missing", %{conn: conn} do
+      conn = post(conn, ~p"/api/shorten", url: nil)
+      assert json_response(conn, 422)["errors"] != %{}
+    end
+
+    test "renders errors when url is invalid format", %{conn: conn} do
+      conn = post(conn, ~p"/api/shorten", url: "not a valid url")
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
 
-  describe "update url" do
-    setup [:create_url]
+  describe "get_by_code" do
+    test "renders url when short_code exists", %{conn: conn} do
+      url = url_fixture()
 
-    test "renders url when data is valid", %{conn: conn, url: %Url{id: id} = url} do
-      conn = put(conn, ~p"/api/urls/#{url}", url: @update_attrs)
-      assert %{"id" => ^id} = json_response(conn, 200)["data"]
-
-      conn = get(conn, ~p"/api/urls/#{id}")
+      conn = get(conn, ~p"/api/shorten/#{url.short_code}")
 
       assert %{
-               "id" => ^id,
-               "access_count" => 43,
-               "short_code" => "some updated short_code",
-               "url" => "some updated url"
+               "id" => id,
+               "url" => _,
+               "short_code" => short_code,
+               "access_count" => 0
              } = json_response(conn, 200)["data"]
+
+      assert id == url.id
+      assert short_code == url.short_code
     end
 
-    test "renders errors when data is invalid", %{conn: conn, url: url} do
-      conn = put(conn, ~p"/api/urls/#{url}", url: @invalid_attrs)
-      assert json_response(conn, 422)["errors"] != %{}
-    end
-  end
-
-  describe "delete url" do
-    setup [:create_url]
-
-    test "deletes chosen url", %{conn: conn, url: url} do
-      conn = delete(conn, ~p"/api/urls/#{url}")
-      assert response(conn, 204)
-
+    test "returns 404 when short_code does not exist", %{conn: conn} do
       assert_error_sent 404, fn ->
-        get(conn, ~p"/api/urls/#{url}")
+        get(conn, ~p"/api/shorten/nonexistent")
       end
     end
-  end
-
-  defp create_url(_) do
-    url = url_fixture()
-
-    %{url: url}
   end
 end

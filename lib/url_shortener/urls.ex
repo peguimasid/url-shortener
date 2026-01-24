@@ -39,23 +39,50 @@ defmodule UrlShortener.Urls do
   def get_url!(id), do: Repo.get!(Url, id)
 
   @doc """
-  Creates a url.
+  Gets a single url by short_code.
+
+  Raises `Ecto.NoResultsError` if the Url does not exist.
 
   ## Examples
 
-      iex> create_url(%{field: value})
+      iex> get_url_by_code!("abc123")
+      %Url{}
+
+      iex> get_url_by_code!("invalid")
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_url_by_code!(short_code) do
+    Repo.get_by!(Url, short_code: short_code)
+  end
+
+  @doc """
+  Creates a url with a generated short_code.
+
+  Uses a transaction to ensure the short_code is always set.
+
+  ## Examples
+
+      iex> create_url(%{url: "https://example.com"})
       {:ok, %Url{}}
 
-      iex> create_url(%{field: bad_value})
+      iex> create_url(%{url: nil})
       {:error, %Ecto.Changeset{}}
 
   """
+  @dialyzer {:nowarn_function, create_url: 1}
   def create_url(attrs) do
-    changeset = Url.changeset(%Url{}, attrs)
-
-    with {:ok, url} <- Repo.insert(changeset) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:url, Url.changeset(%Url{}, attrs))
+    |> Ecto.Multi.update(:url_with_code, fn %{url: url} ->
       short_code = Base62.encode(url.id)
-      update_url(url, %{short_code: short_code})
+      Url.changeset(url, %{short_code: short_code})
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{url_with_code: url}} -> {:ok, url}
+      {:error, :url, changeset, _} -> {:error, changeset}
+      {:error, :url_with_code, changeset, _} -> {:error, changeset}
     end
   end
 

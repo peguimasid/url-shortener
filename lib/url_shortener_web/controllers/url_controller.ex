@@ -6,7 +6,7 @@ defmodule UrlShortenerWeb.UrlController do
 
   action_fallback UrlShortenerWeb.FallbackController
 
-  def create(conn, %{"url" => url}) when is_binary(url) do
+  def create(conn, %{"url" => url}) do
     with {:ok, %Url{} = url_record} <- Urls.create_url(%{url: url}) do
       conn
       |> put_status(:created)
@@ -15,7 +15,7 @@ defmodule UrlShortenerWeb.UrlController do
   end
 
   def get_by_code(conn, %{"short_code" => short_code}) do
-    url = Urls.get_url!(short_code)
+    url = Urls.get_url_by_code!(short_code)
     render(conn, :show, url: url)
   end
 end

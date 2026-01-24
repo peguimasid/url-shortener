@@ -5,9 +5,9 @@ defmodule UrlShortener.UrlsFixtures do
   """
 
   @doc """
-  Generate a unique url short_code.
+  Generate a unique url.
   """
-  def unique_url_short_code, do: "some short_code#{System.unique_integer([:positive])}"
+  def unique_url, do: "https://example.com/page/#{System.unique_integer([:positive])}"
 
   @doc """
   Generate a url.
@@ -16,9 +16,7 @@ defmodule UrlShortener.UrlsFixtures do
     {:ok, url} =
       attrs
       |> Enum.into(%{
-        access_count: 42,
-        short_code: unique_url_short_code(),
-        url: "some url"
+        url: unique_url()
       })
       |> UrlShortener.Urls.create_url()
 

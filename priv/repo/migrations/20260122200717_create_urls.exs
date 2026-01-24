@@ -3,7 +3,7 @@ defmodule UrlShortener.Repo.Migrations.CreateUrls do
 
   def change do
     create table(:urls) do
-      add :url, :string
+      add :url, :text
       add :short_code, :string
       add :access_count, :integer, default: 0
 
